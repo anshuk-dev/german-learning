@@ -1,195 +1,251 @@
 // ==============================================================================
-// BLITZDEUTSCH BULLETPROOF SPEECH & AUDIO ENGINE (DUAL-ENGINE)
-// Native German Audio Stream + Web Speech Synthesis Fallback + Visual Audio Dock
+// BLITZDEUTSCH BULLETPROOF SPEECH & AUDIO ENGINE
+// Synchronous Web Speech (Anna/de-DE) + No-Referrer HD Stream + Audio Diagnostics
 // ==============================================================================
 
 const SpeechEngine = {
-  synth: window.speechSynthesis || null,
+  synth: typeof window !== 'undefined' ? window.speechSynthesis : null,
   germanVoice: null,
-  rate: 0.9, // Default comfortable learner speed
+  allVoices: [],
+  rate: 0.9,
   pitch: 1.0,
   audioElement: null,
-  currentAudioUrl: null,
-  lastSpokenText: '',
+  lastSpokenText: 'Guten Tag',
   isPlaying: false,
   recognition: null,
   isListening: false,
-  audioMode: 'native', // 'native' (High-Def Google Stream) or 'synth' (Browser TTS)
+  audioMode: 'synth', // 'synth' (Native Browser Voice) or 'stream' (HD Stream)
 
   init() {
-    // 1. Initialize Browser Speech Synthesis & Voices
-    if (this.synth) {
-      this.loadVoices();
-      if (speechSynthesis.onvoiceschanged !== undefined) {
-        speechSynthesis.onvoiceschanged = () => this.loadVoices();
-      }
+    // 1. Initial voice loading
+    this.loadVoices();
+
+    // In Chromium and WebKit, voices load asynchronously
+    if (this.synth && typeof this.synth.onvoiceschanged !== 'undefined') {
+      this.synth.onvoiceschanged = () => {
+        this.loadVoices();
+      };
     }
 
-    // 2. Initialize Single Audio Element for instant responsive playback
-    this.audioElement = new Audio();
-    this.audioElement.preload = 'auto';
+    // 2. Prepare HTML5 Audio element with no-referrer
+    try {
+      this.audioElement = new Audio();
+      this.audioElement.referrerPolicy = 'no-referrer';
+      this.audioElement.preload = 'auto';
 
-    this.audioElement.addEventListener('play', () => {
-      this.isPlaying = true;
-      this.updateAudioDock(true);
-    });
+      this.audioElement.addEventListener('play', () => {
+        this.isPlaying = true;
+        this.updateAudioDock(true);
+      });
 
-    this.audioElement.addEventListener('ended', () => {
-      this.isPlaying = false;
-      this.updateAudioDock(false);
-      this.clearActiveWordHighlight();
-    });
+      this.audioElement.addEventListener('ended', () => {
+        this.isPlaying = false;
+        this.updateAudioDock(false);
+        this.clearActiveWordHighlight();
+      });
 
-    this.audioElement.addEventListener('error', (e) => {
-      console.warn('Native audio stream error, falling back to Browser SpeechSynthesis:', e);
-      this.isPlaying = false;
-      // Immediate fallback to speech synthesis if audio stream fails
-      if (this.lastSpokenText) {
-        this.speakWithSynth(this.lastSpokenText);
-      }
-    });
+      this.audioElement.addEventListener('error', (err) => {
+        console.warn('Audio stream playback failed:', err);
+        this.isPlaying = false;
+        this.updateAudioDock(false);
+        this.clearActiveWordHighlight();
+      });
+    } catch (e) {
+      console.warn('Audio element initialization error:', e);
+    }
 
-    // 3. Unlock Web Audio & Speech on first user interaction
+    // 3. User interaction gesture unlocker (Crucial for iOS/macOS Safari & Chrome)
     const unlockAudio = () => {
       if (this.synth && this.synth.paused) {
         this.synth.resume();
       }
+      this.loadVoices();
       document.removeEventListener('click', unlockAudio);
       document.removeEventListener('touchstart', unlockAudio);
     };
     document.addEventListener('click', unlockAudio, { once: true });
     document.addEventListener('touchstart', unlockAudio, { once: true });
 
-    // 4. Initialize Web Speech Recognition
+    // 4. Initialize Speech Recognition (for pronunciation check)
     this.initRecognition();
 
-    // 5. Create Audio Dock UI in DOM
+    // 5. Create Audio Dock in DOM
     this.createAudioDock();
   },
 
   loadVoices() {
     if (!this.synth) return;
     try {
-      const voices = this.synth.getVoices();
-      // Look for de-DE or any German voice
-      this.germanVoice = voices.find(v => v.lang === 'de-DE') || 
-                         voices.find(v => v.lang.startsWith('de')) || null;
+      this.allVoices = this.synth.getVoices() || [];
+      if (this.allVoices.length > 0) {
+        // Prioritize native high-quality German voices
+        this.germanVoice = 
+          this.allVoices.find(v => v.lang === 'de-DE' && (v.name.includes('Anna') || v.name.includes('Google') || v.name.includes('German'))) ||
+          this.allVoices.find(v => v.lang === 'de-DE' || v.lang === 'de_DE') ||
+          this.allVoices.find(v => v.lang.startsWith('de')) ||
+          null;
+      }
     } catch (e) {
-      console.warn('Error loading speech voices:', e);
+      console.warn('Voice loading error:', e);
     }
   },
 
   // --------------------------------------------------------------------------
-  // PRIMARY CLICKABLE PRONUNCIATION METHOD
+  // PRIMARY CLICKABLE PRONUNCIATION METHOD (SYNCHRONOUS USER CALLSTACK)
   // --------------------------------------------------------------------------
   speak(text, speedOverride = null, clickedEl = null) {
     if (!text || typeof text !== 'string') return;
 
-    // Clean text: strip parenthesis annotations like "(Verb)", "(Direct Object)", etc.
-    const cleanText = text
-      .replace(/\s*\([^)]*\)/g, '')
-      .replace(/^(der|die|das)\s+/i, '') // keep or speak with article depending on context
-      .trim();
-
-    // The full utterance including article for maximum learning benefit
-    const utteranceText = text.replace(/\s*\([^)]*\)/g, '').trim();
-
-    this.lastSpokenText = utteranceText;
+    // Clean text of parenthesis annotations like "(Verb)", "(Direct Object)", etc.
+    const cleanText = text.replace(/\s*\([^)]*\)/g, '').trim();
+    this.lastSpokenText = cleanText;
     const speed = speedOverride !== null ? parseFloat(speedOverride) : this.rate;
 
-    // Visual feedback on clicked element
+    // Visual feedback
     this.highlightActiveWord(clickedEl);
-    this.showFloatingNotice(utteranceText);
+    this.showFloatingNotice(cleanText);
 
-    // Try Native Human-Like Audio Stream first (zero dependencies, works on all devices)
-    if (this.audioMode === 'native' && navigator.onLine !== false) {
-      this.speakWithNativeAudio(utteranceText, speed);
+    if (this.audioMode === 'stream') {
+      this.speakWithStream(cleanText, speed);
     } else {
-      this.speakWithSynth(utteranceText, speed);
+      // Synchronous native browser voice (Anna / de-DE)
+      this.speakWithSynth(cleanText, speed);
     }
   },
 
-  speakWithNativeAudio(text, speed = 0.9) {
-    try {
-      if (this.audioElement) {
-        this.audioElement.pause();
-        this.audioElement.currentTime = 0;
-      } else {
-        this.audioElement = new Audio();
-      }
-
-      // Encode query for Google Translate TTS high-definition German audio
-      const encoded = encodeURIComponent(text);
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=de&q=${encoded}`;
-      
-      this.audioElement.src = url;
-      this.audioElement.playbackRate = speed;
-
-      const playPromise = this.audioElement.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((err) => {
-          console.warn('Native audio play error, trying SpeechSynthesis fallback:', err);
-          this.speakWithSynth(text, speed);
-        });
-      }
-    } catch (e) {
-      console.warn('Native audio exception, fallback to synth:', e);
-      this.speakWithSynth(text, speed);
-    }
-  },
-
+  // --------------------------------------------------------------------------
+  // SYNCHRONOUS BROWSER SPEECH (Guaranteed Safari & Chrome User Activation)
+  // --------------------------------------------------------------------------
   speakWithSynth(text, speed = 0.9) {
     if (!this.synth) {
-      console.warn('SpeechSynthesis not supported.');
-      this.updateAudioDock(false);
+      this.speakWithStream(text, speed);
       return;
     }
 
     try {
-      // Resume in case browser paused it
+      // 1. Unpause in case browser backgrounded it
       if (this.synth.paused) {
         this.synth.resume();
       }
 
-      // Cancel ongoing speech with a safe micro-timeout to avoid Chrome abort bug
-      this.synth.cancel();
+      // 2. Refresh voice list right now
+      this.loadVoices();
 
-      setTimeout(() => {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'de-DE';
-        utterance.rate = speed;
-        utterance.pitch = this.pitch;
+      // 3. Cancel any previous speech
+      if (this.synth.speaking) {
+        this.synth.cancel();
+      }
 
-        if (this.germanVoice) {
-          utterance.voice = this.germanVoice;
-        }
+      // 4. Create Utterance synchronously
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'de-DE';
+      utterance.rate = speed;
+      utterance.pitch = this.pitch;
 
-        utterance.onstart = () => {
-          this.isPlaying = true;
-          this.updateAudioDock(true);
-        };
+      if (this.germanVoice) {
+        utterance.voice = this.germanVoice;
+      }
 
-        utterance.onend = () => {
-          this.isPlaying = false;
-          this.updateAudioDock(false);
-          this.clearActiveWordHighlight();
-        };
+      utterance.onstart = () => {
+        this.isPlaying = true;
+        this.updateAudioDock(true);
+      };
 
-        utterance.onerror = (e) => {
-          console.warn('Utterance error:', e);
-          this.isPlaying = false;
-          this.updateAudioDock(false);
-          this.clearActiveWordHighlight();
-        };
+      utterance.onend = () => {
+        this.isPlaying = false;
+        this.updateAudioDock(false);
+        this.clearActiveWordHighlight();
+      };
 
-        this.synth.speak(utterance);
-      }, 20);
+      utterance.onerror = (e) => {
+        console.warn('SpeechSynthesis utterance event error:', e);
+        this.isPlaying = false;
+        this.updateAudioDock(false);
+        this.clearActiveWordHighlight();
+        // Fallback to stream if synthesis fails
+        this.speakWithStream(text, speed);
+      };
+
+      // 5. CALL SPEAK DIRECTLY SYNCHRONOUSLY — NO SETTIMEOUT!
+      this.synth.speak(utterance);
 
     } catch (e) {
-      console.error('Speech synthesis execution failed:', e);
-      this.isPlaying = false;
-      this.updateAudioDock(false);
+      console.error('SpeechSynthesis exception, fallback to stream:', e);
+      this.speakWithStream(text, speed);
     }
+  },
+
+  // --------------------------------------------------------------------------
+  // ONLINE AUDIO STREAM (NO REFERRER)
+  // --------------------------------------------------------------------------
+  speakWithStream(text, speed = 0.9) {
+    try {
+      if (!this.audioElement) {
+        this.audioElement = new Audio();
+        this.audioElement.referrerPolicy = 'no-referrer';
+      }
+
+      this.audioElement.pause();
+      this.audioElement.currentTime = 0;
+      this.audioElement.playbackRate = speed;
+      this.audioElement.referrerPolicy = 'no-referrer';
+
+      const encoded = encodeURIComponent(text);
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=de&q=${encoded}`;
+      this.audioElement.src = url;
+
+      const promise = this.audioElement.play();
+      if (promise !== undefined) {
+        promise.catch((err) => {
+          console.warn('Audio stream error, trying synth:', err);
+          this.speakWithSynth(text, speed);
+        });
+      }
+    } catch (e) {
+      console.warn('Stream exception:', e);
+      this.speakWithSynth(text, speed);
+    }
+  },
+
+  // --------------------------------------------------------------------------
+  // AUDIO TEST CHIME (Uses Web Audio API to verify speakers are unmuted)
+  // --------------------------------------------------------------------------
+  playSpeakerChime() {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+      osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2); // G5
+      osc.frequency.setValueAtTime(1046.50, ctx.currentTime + 0.3); // C6
+
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      console.warn('Web Audio chime error:', e);
+    }
+  },
+
+  testSound() {
+    this.playSpeakerChime();
+    setTimeout(() => {
+      this.speak('Guten Tag! Willkommen bei BlitzDeutsch!');
+    }, 200);
   },
 
   replayLast() {
@@ -215,8 +271,6 @@ const SpeechEngine = {
   highlightActiveWord(el) {
     this.clearActiveWordHighlight();
     if (!el) return;
-
-    // Find closest container or use element directly
     const target = el.closest ? (el.closest('.clickable-german-word') || el) : el;
     target.classList.add('speaking-pulse', 'ring-2', 'ring-amber-500');
     target.setAttribute('data-speaking', 'true');
@@ -257,6 +311,9 @@ const SpeechEngine = {
           <button onclick="SpeechEngine.speak(SpeechEngine.lastSpokenText, 0.75)" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-[11px] font-bold text-amber-300 transition" title="Slow 0.75x">
             0.75x
           </button>
+          <button onclick="SpeechEngine.openTroubleshooter()" class="p-1 rounded-lg text-slate-400 hover:text-amber-400 transition text-xs" title="Audio Help & Test">
+            ⚙️
+          </button>
           <button onclick="SpeechEngine.closeAudioDock()" class="p-1 rounded-lg text-slate-500 hover:text-white transition text-xs">
             ✕
           </button>
@@ -275,7 +332,6 @@ const SpeechEngine = {
     dock.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
     dock.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
 
-    // Auto hide after 4 seconds
     clearTimeout(this._dockTimer);
     this._dockTimer = setTimeout(() => {
       this.closeAudioDock();
@@ -301,7 +357,79 @@ const SpeechEngine = {
   },
 
   // --------------------------------------------------------------------------
-  // SPEECH RECOGNITION (VOICE PRACTICE / MIC TESTING)
+  // AUDIO DIAGNOSTICS & TROUBLESHOOTER MODAL
+  // --------------------------------------------------------------------------
+  openTroubleshooter() {
+    let modal = document.getElementById('audio-troubleshooter-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'audio-troubleshooter-modal';
+      modal.className = 'fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4';
+      document.body.appendChild(modal);
+    }
+
+    this.loadVoices();
+    const voiceName = this.germanVoice ? `${this.germanVoice.name} (${this.germanVoice.lang})` : 'System Default German';
+    const totalVoices = this.allVoices.length;
+
+    modal.innerHTML = `
+      <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 relative">
+        <button onclick="SpeechEngine.closeTroubleshooter()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white p-2 text-xl font-bold">✕</button>
+        
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950 text-amber-500 flex items-center justify-center text-2xl font-bold">
+            🔊
+          </div>
+          <div>
+            <h3 class="text-xl font-bold">Audio & Sound Diagnoser</h3>
+            <p class="text-xs text-slate-500">Test all audio channels to verify sound works on your device.</p>
+          </div>
+        </div>
+
+        <div class="space-y-3 mb-6 text-xs">
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <span class="text-slate-500">Active German Voice:</span>
+            <span class="font-bold text-amber-600 dark:text-amber-400 font-mono">${voiceName}</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <span class="text-slate-500">Voices Installed on OS:</span>
+            <span class="font-bold text-slate-900 dark:text-white">${totalVoices} detected</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+            <span class="text-slate-500">Preferred Engine:</span>
+            <select onchange="SpeechEngine.setMode(this.value)" class="bg-transparent font-bold text-amber-600 dark:text-amber-400 focus:outline-none cursor-pointer">
+              <option value="synth" ${this.audioMode === 'synth' ? 'selected' : ''}>Native Browser Voice (Anna)</option>
+              <option value="stream" ${this.audioMode === 'stream' ? 'selected' : ''}>HD Audio Stream</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="space-y-2.5 mb-6">
+          <button onclick="SpeechEngine.testSound()" class="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-md">
+            <span>🔊 1. Play Test Speech ("Guten Tag")</span>
+          </button>
+          <button onclick="SpeechEngine.playSpeakerChime()" class="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2">
+            <span>🔔 2. Play Hardware Speaker Beep (Proves sound is unmuted)</span>
+          </button>
+        </div>
+
+        <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-[11px] text-amber-900 dark:text-amber-300 leading-relaxed">
+          <strong>Still no sound?</strong> Check if:
+          <br>1. Your Mac/PC volume slider is turned up and headphones/speakers are connected.
+          <br>2. This browser tab is not muted (look for the speaker icon with a slash on your browser tab).
+        </div>
+      </div>
+    `;
+    modal.classList.remove('hidden');
+  },
+
+  closeTroubleshooter() {
+    const modal = document.getElementById('audio-troubleshooter-modal');
+    if (modal) modal.classList.add('hidden');
+  },
+
+  // --------------------------------------------------------------------------
+  // SPEECH RECOGNITION (MIC ACCURACY TEST)
   // --------------------------------------------------------------------------
   initRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;

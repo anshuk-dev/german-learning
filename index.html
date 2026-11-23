@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="referrer" content="no-referrer">
   <title>BlitzDeutsch | Accelerated German Mastery WebApp</title>
   <meta name="description" content="Master German rapidly with the 80/20 Pareto principle, phonetics sound engine, CEFR A1-B1 roadmap, interactive quizzes, and native audio speech.">
   
@@ -55,17 +56,17 @@
         <!-- Right Quick Controls & Stats -->
         <div class="flex items-center gap-2 sm:gap-3">
           <!-- Quick Sound Test Button -->
-          <button onclick="SpeechEngine.speak('Guten Tag! Willkommen bei BlitzDeutsch!', null, this)" class="clickable-german-word px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition" title="Click to test German audio playback">
+          <button onclick="SpeechEngine.testSound()" class="clickable-german-word px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition" title="Click to test sound & speaker chime">
             <span>🔊</span>
-            <span class="hidden sm:inline">Test Sound</span>
+            <span class="inline">Test Sound</span>
           </button>
 
           <!-- Voice Engine & Speed Controller -->
           <div class="hidden lg:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
-            <span class="text-slate-400 font-medium">Voice:</span>
+            <span class="text-slate-400 font-medium">Engine:</span>
             <select id="audio-engine-select" onchange="SpeechEngine.setMode(this.value)" class="bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer mr-2">
-              <option value="native" selected class="dark:bg-slate-800">🎙️ HD Audio</option>
-              <option value="synth" class="dark:bg-slate-800">🤖 Browser TTS</option>
+              <option value="synth" selected class="dark:bg-slate-800">🗣️ Anna (Device Voice)</option>
+              <option value="stream" class="dark:bg-slate-800">🎙️ HD Audio Stream</option>
             </select>
             <span class="text-slate-400 font-medium border-l border-slate-300 dark:border-slate-700 pl-2">Speed:</span>
             <select id="audio-speed-select" onchange="SpeechEngine.setSpeed(this.value)" class="bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer">
@@ -74,6 +75,12 @@
               <option value="1.0" class="dark:bg-slate-800">1.0x</option>
             </select>
           </div>
+
+          <!-- Sound Diagnostics Modal Trigger -->
+          <button onclick="SpeechEngine.openTroubleshooter()" class="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-slate-500 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition text-xs font-semibold" title="Audio Diagnoser">
+            <span>⚙️</span>
+            <span>Sound Help</span>
+          </button>
 
           <!-- User Stats Badges -->
           <div class="flex items-center gap-2">
