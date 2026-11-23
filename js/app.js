@@ -19,7 +19,8 @@ const AppStorage = {
       lastActive: new Date().toISOString().split('T')[0],
       completedMilestones: ['m1'],
       darkMode: false,
-      speed: 0.9
+      speed: 0.9,
+      audioMode: 'native'
     };
   },
 
@@ -212,30 +213,30 @@ const App = {
   // RENDER: PHONETICS & PRONUNCIATION SECTION
   // --------------------------------------------------------------------------
   renderPhonetics() {
-    // Alphabet Grid
+    // Alphabet Grid (Every card is a clickable pronunciation button!)
     const alphaContainer = document.getElementById('alphabet-grid');
     if (alphaContainer) {
       alphaContainer.innerHTML = GERMAN_DATA.phonetics.alphabet.map(letter => `
-        <div class="p-3.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 shadow-xs hover:border-amber-400 dark:hover:border-amber-400 transition group flex flex-col justify-between">
+        <div onclick="SpeechEngine.speak('${letter.audio}', null, this)" class="clickable-german-word p-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700/80 hover:border-amber-500 dark:hover:border-amber-400 shadow-xs transition group flex flex-col justify-between cursor-pointer" title="Click to hear '${letter.letter}' and '${letter.example}'">
           <div>
             <div class="flex items-center justify-between">
-              <span class="text-xl font-black text-slate-900 dark:text-white group-hover:text-amber-500 transition">${letter.letter}</span>
+              <span class="text-2xl font-black text-slate-900 dark:text-white group-hover:text-amber-500 transition">${letter.letter}</span>
               <span class="text-xs font-mono text-slate-400 dark:text-slate-500">${letter.ipa}</span>
             </div>
             <p class="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">Name: <span class="font-bold text-slate-700 dark:text-slate-300">${letter.name}</span></p>
             <div class="mt-2 text-xs text-slate-600 dark:text-slate-400">
-              <span class="font-semibold text-amber-600 dark:text-amber-400">${letter.example}</span>: ${letter.meaning}
+              <span class="font-bold text-amber-600 dark:text-amber-400">${letter.example}</span>: ${letter.meaning}
             </div>
             ${letter.note ? `<p class="text-[11px] text-slate-400 dark:text-slate-500 mt-1.5 leading-tight italic">${letter.note}</p>` : ''}
           </div>
-          <button onclick="SpeechEngine.speak('${letter.audio}')" class="mt-3 w-full py-1.5 px-2 bg-slate-100 hover:bg-amber-500 hover:text-white dark:bg-slate-700 dark:hover:bg-amber-500 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
-            <span>🔊 Pronounce</span>
+          <button type="button" class="mt-3 w-full py-1.5 px-2 bg-amber-50 group-hover:bg-amber-500 group-hover:text-white dark:bg-slate-700 dark:group-hover:bg-amber-500 text-amber-800 dark:text-slate-200 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5">
+            <span>🔊 Click to Listen</span>
           </button>
         </div>
       `).join('');
     }
 
-    // Phonetic Rules
+    // Phonetic Rules (Examples are clickable)
     const rulesContainer = document.getElementById('phonetics-rules-list');
     if (rulesContainer) {
       rulesContainer.innerHTML = GERMAN_DATA.phonetics.rules.map(rule => `
@@ -254,36 +255,34 @@ const App = {
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             ${rule.examples.map(ex => `
-              <div class="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
+              <button type="button" onclick="SpeechEngine.speak('${ex.german.replace(/'/g, "\\'")}', null, this)" class="clickable-german-word p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/60 hover:border-amber-400 transition text-left flex items-center justify-between group" title="Click to hear '${ex.german}'">
                 <div>
-                  <div class="font-bold text-xs text-slate-900 dark:text-white">${ex.german}</div>
+                  <div class="font-bold text-xs text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400">${ex.german}</div>
                   <div class="text-[11px] text-slate-500 dark:text-slate-400">${ex.meaning}</div>
                 </div>
-                <button onclick="SpeechEngine.speak('${ex.german.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-amber-500 transition p-1" title="Play Sound">
-                  🔊
-                </button>
-              </div>
+                <span class="text-amber-500 opacity-60 group-hover:opacity-100 text-sm">🔊</span>
+              </button>
             `).join('')}
           </div>
         </div>
       `).join('');
     }
 
-    // Minimal Pairs
+    // Minimal Pairs (Click to listen)
     const pairsContainer = document.getElementById('minimal-pairs-grid');
     if (pairsContainer) {
       pairsContainer.innerHTML = GERMAN_DATA.phonetics.minimalPairs.map(p => `
         <div class="p-4 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex flex-col justify-between">
           <div class="grid grid-cols-2 gap-2 text-center pb-3 border-b border-slate-100 dark:border-slate-700">
-            <button onclick="SpeechEngine.speak('${p.word1}')" class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-slate-700 transition">
-              <span class="block font-bold text-sm text-slate-900 dark:text-white">${p.word1}</span>
+            <button type="button" onclick="SpeechEngine.speak('${p.word1}', null, this)" class="clickable-german-word p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 hover:border-amber-400 transition">
+              <span class="block font-black text-sm text-slate-900 dark:text-white">${p.word1}</span>
               <span class="text-xs text-slate-500">${p.mean1}</span>
-              <span class="block text-[11px] text-amber-600 dark:text-amber-400 mt-1">🔊 Play</span>
+              <span class="block text-xs font-bold text-amber-600 dark:text-amber-400 mt-1">🔊 Play</span>
             </button>
-            <button onclick="SpeechEngine.speak('${p.word2}')" class="p-2 rounded-lg bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-slate-700 transition">
-              <span class="block font-bold text-sm text-slate-900 dark:text-white">${p.word2}</span>
+            <button type="button" onclick="SpeechEngine.speak('${p.word2}', null, this)" class="clickable-german-word p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 hover:border-amber-400 transition">
+              <span class="block font-black text-sm text-slate-900 dark:text-white">${p.word2}</span>
               <span class="text-xs text-slate-500">${p.mean2}</span>
-              <span class="block text-[11px] text-amber-600 dark:text-amber-400 mt-1">🔊 Play</span>
+              <span class="block text-xs font-bold text-amber-600 dark:text-amber-400 mt-1">🔊 Play</span>
             </button>
           </div>
           <p class="text-xs text-slate-500 dark:text-slate-400 text-center mt-2 font-medium">
@@ -295,7 +294,7 @@ const App = {
   },
 
   // --------------------------------------------------------------------------
-  // RENDER: VOCABULARY LIST (SEARCH & FILTER)
+  // RENDER: VOCABULARY LIST (CLICKABLE GERMAN WORDS & EXAMPLES)
   // --------------------------------------------------------------------------
   renderVocabulary(query = '', categoryFilter = 'All') {
     const container = document.getElementById('vocabulary-table-body');
@@ -327,17 +326,20 @@ const App = {
       return `
         <tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition">
           <td class="py-3 px-4">
-            <div class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span>${v.german}</span>
-              <button onclick="SpeechEngine.speak('${v.german.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-amber-500 transition" title="Listen">🔊</button>
-            </div>
+            <button type="button" onclick="SpeechEngine.speak('${v.german.replace(/'/g, "\\'")}', null, this)" class="clickable-german-word group px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:border-amber-400 dark:hover:border-amber-400 transition flex items-center gap-2.5 shadow-2xs" title="Click to hear pronunciation">
+              <span class="w-6 h-6 rounded-lg bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 flex items-center justify-center text-xs group-hover:scale-110 transition">🔊</span>
+              <span class="font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 text-sm">${v.german}</span>
+            </button>
           </td>
-          <td class="py-3 px-4 text-slate-700 dark:text-slate-300 font-medium">${v.english}</td>
+          <td class="py-3 px-4 text-slate-700 dark:text-slate-300 font-medium text-sm">${v.english}</td>
           <td class="py-3 px-4">${genderBadge}</td>
           <td class="py-3 px-4">
             <div class="text-xs text-slate-600 dark:text-slate-400">
-              <span class="italic text-slate-800 dark:text-slate-200">${v.example}</span>
-              <div class="text-slate-400 dark:text-slate-500 mt-0.5">${v.exTrans}</div>
+              <button type="button" onclick="SpeechEngine.speak('${v.example.replace(/'/g, "\\'")}', 0.85, this)" class="clickable-german-word text-left hover:text-amber-600 dark:hover:text-amber-400 transition flex items-center gap-1.5" title="Click to pronounce sentence">
+                <span class="text-amber-500 opacity-60 hover:opacity-100">🔊</span>
+                <span class="italic font-medium text-slate-800 dark:text-slate-200">${v.example}</span>
+              </button>
+              <div class="text-slate-400 dark:text-slate-500 mt-0.5 ml-4">${v.exTrans}</div>
             </div>
           </td>
           <td class="py-3 px-4 text-xs font-medium text-slate-500">${v.category}</td>
@@ -353,7 +355,7 @@ const App = {
   },
 
   // --------------------------------------------------------------------------
-  // RENDER: VERBS LIST
+  // RENDER: VERBS LIST (CLICKABLE HEADERS & EXAMPLES)
   // --------------------------------------------------------------------------
   renderVerbs(query = '') {
     const container = document.getElementById('verbs-container');
@@ -369,10 +371,10 @@ const App = {
       <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between">
         <div>
           <div class="flex items-center justify-between mb-2">
-            <h4 class="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <span>${v.infinitive}</span>
-              <button onclick="SpeechEngine.speak('${v.infinitive}')" class="text-slate-400 hover:text-amber-500 transition text-sm">🔊</button>
-            </h4>
+            <button type="button" onclick="SpeechEngine.speak('${v.infinitive}', null, this)" class="clickable-german-word text-left px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 hover:border-amber-400 transition flex items-center gap-2 group" title="Click to hear '${v.infinitive}'">
+              <span class="text-amber-500 text-sm group-hover:scale-110 transition">🔊</span>
+              <span class="text-lg font-black text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400">${v.infinitive}</span>
+            </button>
             <span class="text-xs font-bold px-2.5 py-0.5 rounded-full ${v.auxiliary === 'sein' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'}">
               Perfekt: + ${v.auxiliary}
             </span>
@@ -386,15 +388,20 @@ const App = {
         </div>
 
         <div class="text-xs border-t border-slate-100 dark:border-slate-700/80 pt-3">
-          <p class="text-slate-800 dark:text-slate-200 font-medium italic">"${v.example}"</p>
-          <p class="text-slate-400 dark:text-slate-500 mt-0.5">${v.exTrans}</p>
+          <button type="button" onclick="SpeechEngine.speak('${v.example.replace(/'/g, "\\'")}', 0.85, this)" class="clickable-german-word text-left hover:text-amber-600 dark:hover:text-amber-400 transition flex items-start gap-1.5" title="Click to hear example sentence">
+            <span class="text-amber-500 mt-0.5">🔊</span>
+            <div>
+              <p class="text-slate-800 dark:text-slate-200 font-medium italic">"${v.example}"</p>
+              <p class="text-slate-400 dark:text-slate-500 mt-0.5">${v.exTrans}</p>
+            </div>
+          </button>
         </div>
       </div>
     `).join('');
   },
 
   // --------------------------------------------------------------------------
-  // RENDER: CONVERSATIONAL PHRASES
+  // RENDER: CONVERSATIONAL PHRASES (CLICKABLE AUDIO)
   // --------------------------------------------------------------------------
   renderPhrases() {
     const container = document.getElementById('phrases-grid');
@@ -403,25 +410,25 @@ const App = {
     container.innerHTML = GERMAN_DATA.phrases.map(p => `
       <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xs flex flex-col justify-between">
         <div>
-          <div class="flex items-start justify-between gap-2 mb-2">
-            <h4 class="text-base font-bold text-slate-900 dark:text-white leading-snug">${p.german}</h4>
-            <button onclick="SpeechEngine.speak('${p.german.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-amber-500 transition flex-shrink-0 text-base" title="Listen">🔊</button>
-          </div>
+          <button type="button" onclick="SpeechEngine.speak('${p.german.replace(/'/g, "\\'")}', 0.85, this)" class="clickable-german-word w-full text-left p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 border border-slate-200 dark:border-slate-700 hover:border-amber-400 transition flex items-center justify-between group mb-2" title="Click to pronounce phrase">
+            <span class="text-base font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 leading-snug">${p.german}</span>
+            <span class="text-amber-500 text-lg group-hover:scale-110 transition flex-shrink-0 ml-2">🔊</span>
+          </button>
           <p class="text-sm font-medium text-amber-600 dark:text-amber-400 mb-2">${p.english}</p>
           <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">📍 Context: ${p.context}</p>
         </div>
         ${p.response ? `
-          <div class="bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-xs">
-            <span class="text-slate-400">Typical response:</span>
+          <button type="button" onclick="SpeechEngine.speak('${p.response.replace(/'/g, "\\'")}', 0.85, this)" class="clickable-german-word text-left bg-slate-50 dark:bg-slate-900/60 hover:bg-amber-50 dark:hover:bg-amber-950/40 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-xs transition" title="Click to pronounce response">
+            <span class="text-slate-400 flex items-center gap-1"><span>Typical response:</span> <span class="text-amber-500">🔊</span></span>
             <div class="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">${p.response}</div>
-          </div>
+          </button>
         ` : ''}
       </div>
     `).join('');
   },
 
   // --------------------------------------------------------------------------
-  // RENDER: FALSE FRIENDS
+  // RENDER: FALSE FRIENDS (CLICKABLE AUDIO)
   // --------------------------------------------------------------------------
   renderFalseFriends() {
     const container = document.getElementById('false-friends-grid');
@@ -430,10 +437,10 @@ const App = {
     container.innerHTML = GERMAN_DATA.falseFriends.map(ff => `
       <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 border-2 border-rose-200 dark:border-rose-950 shadow-xs">
         <div class="flex items-center justify-between mb-3">
-          <span class="text-lg font-black text-rose-600 dark:text-rose-400 flex items-center gap-2">
-            <span>${ff.german}</span>
-            <button onclick="SpeechEngine.speak('${ff.german}')" class="text-slate-400 hover:text-amber-500 text-sm">🔊</button>
-          </span>
+          <button type="button" onclick="SpeechEngine.speak('${ff.german}', null, this)" class="clickable-german-word px-3 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 hover:border-amber-500 transition flex items-center gap-2 group" title="Click to pronounce '${ff.german}'">
+            <span class="text-amber-500 text-sm">🔊</span>
+            <span class="text-lg font-black text-rose-600 dark:text-rose-400 group-hover:text-amber-600">${ff.german}</span>
+          </button>
           <span class="text-xs font-bold uppercase tracking-wider text-rose-700 dark:text-rose-300 bg-rose-100 dark:bg-rose-950/70 px-2.5 py-0.5 rounded-full">
             ⚠️ Trap Alert
           </span>
@@ -482,8 +489,13 @@ const App = {
           <h4 class="font-bold text-slate-900 dark:text-white text-base mb-1">${pm.group}</h4>
           <p class="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2">${pm.preps}</p>
           ${pm.rule ? `<p class="text-xs text-slate-500 dark:text-slate-400 mb-2"><strong>Rule:</strong> ${pm.rule}</p>` : ''}
-          <div class="text-xs bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
-            <strong>Example:</strong> <em>"${pm.example}"</em>
+          <div class="text-xs bg-slate-50 dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 flex items-center justify-between">
+            <div>
+              <strong>Example:</strong> <em>"${pm.example}"</em>
+            </div>
+            <button type="button" onclick="SpeechEngine.speak('${pm.example.replace(/'/g, "\\'")}', null, this)" class="clickable-german-word text-amber-500 hover:scale-110 transition ml-2 text-base" title="Hear example">
+              🔊
+            </button>
           </div>
         </div>
       `).join('');

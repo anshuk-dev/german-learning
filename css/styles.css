@@ -52,6 +52,38 @@ body {
   transform: rotateY(180deg);
 }
 
+/* Clickable Pronunciation UI */
+.clickable-german-word {
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+}
+
+.clickable-german-word:hover {
+  transform: translateY(-1px);
+}
+
+.clickable-german-word:active {
+  transform: translateY(1px);
+}
+
+@keyframes pulseRing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.speaking-pulse {
+  animation: pulseRing 1.2s infinite;
+  border-color: #f59e0b !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

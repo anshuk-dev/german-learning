@@ -53,14 +53,25 @@
         </div>
 
         <!-- Right Quick Controls & Stats -->
-        <div class="flex items-center gap-3">
-          <!-- Voice Speed Controller -->
-          <div class="hidden md:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
-            <span class="text-slate-400 font-medium">Audio Speed:</span>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <!-- Quick Sound Test Button -->
+          <button onclick="SpeechEngine.speak('Guten Tag! Willkommen bei BlitzDeutsch!', null, this)" class="clickable-german-word px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition" title="Click to test German audio playback">
+            <span>🔊</span>
+            <span class="hidden sm:inline">Test Sound</span>
+          </button>
+
+          <!-- Voice Engine & Speed Controller -->
+          <div class="hidden lg:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+            <span class="text-slate-400 font-medium">Voice:</span>
+            <select id="audio-engine-select" onchange="SpeechEngine.setMode(this.value)" class="bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer mr-2">
+              <option value="native" selected class="dark:bg-slate-800">🎙️ HD Audio</option>
+              <option value="synth" class="dark:bg-slate-800">🤖 Browser TTS</option>
+            </select>
+            <span class="text-slate-400 font-medium border-l border-slate-300 dark:border-slate-700 pl-2">Speed:</span>
             <select id="audio-speed-select" onchange="SpeechEngine.setSpeed(this.value)" class="bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer">
-              <option value="0.75" class="dark:bg-slate-800">0.75x (Slow)</option>
-              <option value="0.9" selected class="dark:bg-slate-800">0.9x (Learner)</option>
-              <option value="1.0" class="dark:bg-slate-800">1.0x (Native)</option>
+              <option value="0.75" class="dark:bg-slate-800">0.75x</option>
+              <option value="0.9" selected class="dark:bg-slate-800">0.9x</option>
+              <option value="1.0" class="dark:bg-slate-800">1.0x</option>
             </select>
           </div>
 
@@ -135,6 +146,9 @@
 
         <!-- Quick Jump Buttons -->
         <div class="mt-6 flex flex-wrap items-center gap-3">
+          <button onclick="SpeechEngine.speak('Guten Tag! Wie geht es dir?', null, this)" class="clickable-german-word px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-sm font-bold transition flex items-center gap-2 shadow-sm" title="Click to test pronunciation">
+            <span>🔊 Hear German Greeting</span>
+          </button>
           <button onclick="App.switchTab('practice')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/25 transition flex items-center gap-2">
             <span>⚡ Start Practice Session</span>
           </button>
@@ -281,18 +295,19 @@
                 <div class="flashcard-front bg-gradient-to-br from-slate-50 to-amber-50/40 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-200 dark:border-slate-700 p-8 flex flex-col justify-between shadow-md">
                   <div class="flex justify-between items-center">
                     <span id="fc-front-badge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">Category</span>
-                    <button onclick="PracticeEngine.playFlashcardAudio(event)" class="text-2xl p-2 rounded-full hover:bg-amber-100 dark:hover:bg-slate-700 text-amber-500 transition" title="Speak German">
-                      🔊
+                    <button type="button" onclick="PracticeEngine.playFlashcardAudio(event)" class="clickable-german-word text-sm font-bold px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 flex items-center gap-1.5 shadow-sm transition" title="Click to hear pronunciation">
+                      <span>🔊 Listen</span>
                     </button>
                   </div>
                   <div>
-                    <h4 id="fc-front-text" class="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                    <h4 id="fc-front-text" onclick="PracticeEngine.playFlashcardAudio(event)" class="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight hover:text-amber-500 transition cursor-pointer" title="Click to pronounce">
                       Hallo
                     </h4>
-                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Click card or press Space to flip</p>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Click word to listen • Click card to flip</p>
                   </div>
-                  <div class="text-xs font-medium text-amber-600 dark:text-amber-400">
-                    💡 Tap to reveal English meaning & sentence
+                  <div class="flex items-center justify-between text-xs font-medium text-amber-600 dark:text-amber-400">
+                    <span>💡 Tap card to reveal English meaning</span>
+                    <button type="button" onclick="PracticeEngine.playFlashcardAudio(event)" class="underline hover:text-amber-700">🔊 Pronounce</button>
                   </div>
                 </div>
 
@@ -300,15 +315,18 @@
                 <div class="flashcard-back bg-slate-900 text-white border-2 border-amber-500/60 p-8 flex flex-col justify-between shadow-xl">
                   <div class="flex justify-between items-center text-xs text-amber-400 font-semibold">
                     <span>ENGLISH TRANSLATION</span>
-                    <button onclick="PracticeEngine.playFlashcardAudio(event)" class="text-xl p-1 rounded hover:text-white" title="Listen">🔊</button>
+                    <button type="button" onclick="PracticeEngine.playFlashcardAudio(event)" class="clickable-german-word px-3 py-1 rounded-lg bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 transition" title="Listen">🔊 Speak German</button>
                   </div>
                   <div>
                     <h4 id="fc-back-text" class="text-2xl md:text-3xl font-extrabold text-white">
                       Hello
                     </h4>
-                    <div class="mt-4 p-3 rounded-xl bg-slate-800/80 border border-slate-700 text-left">
-                      <p id="fc-back-example" class="text-xs text-amber-300 font-mono italic">Hallo, wie geht es dir?</p>
-                      <p id="fc-back-trans" class="text-[11px] text-slate-300 mt-1">Hello, how are you?</p>
+                    <div class="mt-4 p-3 rounded-xl bg-slate-800/80 border border-slate-700 text-left cursor-pointer hover:border-amber-400 transition" onclick="PracticeEngine.playFlashcardAudio(event)" title="Click to listen">
+                      <p id="fc-back-example" class="text-xs text-amber-300 font-mono italic flex items-center gap-1.5">
+                        <span>🔊</span>
+                        <span>Hallo, wie geht es dir?</span>
+                      </p>
+                      <p id="fc-back-trans" class="text-[11px] text-slate-300 mt-1 pl-4">Hello, how are you?</p>
                     </div>
                   </div>
                   <div class="text-xs text-slate-400">
@@ -437,8 +455,11 @@
             </p>
 
             <div class="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-center mb-4">
-              <div id="pron-word" class="text-2xl font-black text-slate-900 dark:text-white">Guten Morgen</div>
-              <div id="pron-ipa" class="text-xs font-mono text-amber-600 dark:text-amber-400 mt-0.5">/ˌɡuːtn̩ ˈmɔʁɡn̩/</div>
+              <button type="button" onclick="PracticeEngine.playPronounceSample(0.9, this)" class="clickable-german-word group w-full p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-slate-800 transition" title="Click to pronounce">
+                <div id="pron-word" class="text-2xl font-black text-slate-900 dark:text-white group-hover:text-amber-500 transition">Guten Morgen</div>
+                <div id="pron-ipa" class="text-xs font-mono text-amber-600 dark:text-amber-400 mt-0.5">/ˌɡuːtn̩ ˈmɔʁɡn̩/</div>
+                <span class="inline-block mt-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 group-hover:underline">🔊 Click to Listen</span>
+              </button>
               <p id="pron-tip" class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 italic">
                 Tip: Vocalized end -er sounds like soft "ah"
               </p>
@@ -491,6 +512,9 @@
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
             Searchable, categorized list with color-coded grammatical genders and one-click native audio speech playback.
           </p>
+          <div class="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300">
+            <span>🔊 <strong>Clickable Audio:</strong> Click any German word button or example sentence below to hear clear pronunciation!</span>
+          </div>
         </div>
 
         <!-- Search Bar -->

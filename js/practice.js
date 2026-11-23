@@ -208,7 +208,7 @@ const PracticeEngine = {
     if (e) e.stopPropagation();
     const card = this.flashcards.cards[this.flashcards.currentIndex];
     if (card && card.audio) {
-      SpeechEngine.speak(card.audio);
+      SpeechEngine.speak(card.audio, null, e ? e.currentTarget : null);
     }
   },
 
@@ -622,9 +622,9 @@ const PracticeEngine = {
     }
   },
 
-  playPronounceSample(speed = 0.9) {
+  playPronounceSample(speed = 0.9, el = null) {
     const item = this.pronounce.words[this.pronounce.currentIndex];
-    if (item) SpeechEngine.speak(item.text, speed);
+    if (item) SpeechEngine.speak(item.text, speed, el);
   },
 
   recordAndVerify() {
