@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BlitzDeutsch | Accelerated German Mastery WebApp</title>
+  <meta name="description" content="Master German rapidly with the 80/20 Pareto principle, phonetics sound engine, CEFR A1-B1 roadmap, interactive quizzes, and native audio speech.">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇩🇪</text></svg>">
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- ========================================================================
+       TOP NAVIGATION BAR
+       ======================================================================== -->
+  <header class="sticky top-0 z-50 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Brand Logo -->
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">🇩🇪</span>
+          <div>
+            <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-amber-500 via-rose-500 to-amber-600 bg-clip-text text-transparent">
+              BlitzDeutsch
+            </span>
+            <span class="hidden sm:inline-block ml-2 text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
+              Pareto 80/20 Method
+            </span>
+          </div>
+        </div>
+
+        <!-- Right Quick Controls & Stats -->
+        <div class="flex items-center gap-3">
+          <!-- Voice Speed Controller -->
+          <div class="hidden md:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+            <span class="text-slate-400 font-medium">Audio Speed:</span>
+            <select id="audio-speed-select" onchange="SpeechEngine.setSpeed(this.value)" class="bg-transparent font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer">
+              <option value="0.75" class="dark:bg-slate-800">0.75x (Slow)</option>
+              <option value="0.9" selected class="dark:bg-slate-800">0.9x (Learner)</option>
+              <option value="1.0" class="dark:bg-slate-800">1.0x (Native)</option>
+            </select>
+          </div>
+
+          <!-- User Stats Badges -->
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/40 px-2.5 py-1 rounded-lg text-xs font-bold text-amber-700 dark:text-amber-400" title="Daily Learning Streak">
+              <span>🔥</span>
+              <span id="user-streak">1 d</span>
+            </div>
+            <div class="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/40 px-2.5 py-1 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-400" title="Experience Points">
+              <span>⚡</span>
+              <span id="user-points">50 XP</span>
+            </div>
+          </div>
+
+          <!-- Theme Toggle -->
+          <button onclick="App.toggleTheme()" class="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Toggle Dark/Light Mode">
+            <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+            <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (Scrollable on Mobile) -->
+      <nav class="flex space-x-1 overflow-x-auto pb-2.5 pt-1 border-t border-slate-100 dark:border-slate-800 scrollbar-none" aria-label="Tabs">
+        <a href="#roadmap" data-tab-target="roadmap" class="tab-btn active px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap bg-amber-500 text-white shadow-md shadow-amber-500/20">
+          🗺️ Roadmap (A1-B1)
+        </a>
+        <a href="#phonetics" data-tab-target="phonetics" class="tab-btn px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+          🗣️ Pronunciation & Sound Code
+        </a>
+        <a href="#practice" data-tab-target="practice" class="tab-btn px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+          ⚡ Practice Arena (Cards & Quiz)
+        </a>
+        <a href="#vocab" data-tab-target="vocab" class="tab-btn px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+          📖 500 High-Yield Vocab
+        </a>
+        <a href="#verbs" data-tab-target="verbs" class="tab-btn px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+          🏃 Core Verbs (Conjugated)
+        </a>
+        <a href="#phrases" data-tab-target="phrases" class="tab-btn px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+          💬 Survival Phrases & Traps
+        </a>
+        <a href="#grammar" data-tab-target="grammar" class="tab-btn px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+          📐 Cases & Suffix Hacks
+        </a>
+        <a href="#methodology" data-tab-target="methodology" class="tab-btn px-4 py-2 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
+          🚀 Fast-Learning Method
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       MAIN CONTENT CONTAINER
+       ======================================================================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- HERO BANNER -->
+    <div class="mb-8 p-6 md:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-amber-950 text-white relative overflow-hidden shadow-xl border border-slate-700/60">
+      <div class="absolute -right-10 -bottom-10 opacity-10 text-9xl select-none pointer-events-none">🇩🇪</div>
+      <div class="relative z-10 max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider mb-3">
+          ⚡ 80/20 German Acceleration Engine
+        </div>
+        <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+          Learn German Fast with <span class="text-amber-400">Audio-First Phonetics</span> & Structured Recall
+        </h1>
+        <p class="mt-2 text-sm sm:text-base text-slate-300 leading-relaxed">
+          Master the phonetic sound rules to pronounce any German word accurately, grasp the 500 core words making up 75% of spoken German, unlock the V2 sentence pattern, and drill with interactive native speech synthesis!
+        </p>
+
+        <!-- Quick Jump Buttons -->
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <button onclick="App.switchTab('practice')" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/25 transition flex items-center gap-2">
+            <span>⚡ Start Practice Session</span>
+          </button>
+          <button onclick="App.switchTab('phonetics')" class="px-5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-700 font-semibold text-sm transition flex items-center gap-2">
+            <span>🗣️ Master Sound Code</span>
+          </button>
+          <button onclick="App.switchTab('roadmap')" class="px-5 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-white border border-slate-700 font-semibold text-sm transition flex items-center gap-2">
+            <span>🗺️ View A1-B1 Timeline</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================
+         SECTION 1: ROADMAP (A1 -> B1 ACCELERATED)
+         ====================================================================== -->
+    <section id="section-roadmap" class="tab-section">
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>🗺️ The Fast-Track CEFR Roadmap</span>
+          </h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Follow this 5-stage progression from zero to conversational autonomy (A1 to B1). Click milestones to mark complete and earn XP!
+          </p>
+        </div>
+        
+        <!-- Overall Progress Widget -->
+        <div class="w-full sm:w-72 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
+          <div class="flex justify-between items-center text-xs font-semibold mb-2">
+            <span class="text-slate-600 dark:text-slate-400">Total Roadmap Completion</span>
+            <span id="user-milestones-count" class="text-amber-500 font-bold">0/25</span>
+          </div>
+          <div class="w-full bg-slate-100 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+            <div id="roadmap-overall-progress" class="bg-gradient-to-r from-amber-500 to-emerald-500 h-2.5 rounded-full transition-all duration-500" style="width: 4%"></div>
+          </div>
+          <p id="roadmap-progress-text" class="text-[11px] text-slate-400 dark:text-slate-500 mt-2 text-right">0% Completed</p>
+        </div>
+      </div>
+
+      <!-- Roadmap Timeline Container -->
+      <div id="roadmap-timeline" class="bg-white dark:bg-slate-800/80 rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-slate-700 shadow-sm">
+        <!-- Rendered dynamically by App.renderRoadmap() -->
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION 2: PHONETICS & PRONUNCIATION HUB
+         ====================================================================== -->
+    <section id="section-phonetics" class="tab-section hidden">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span>🗣️ German Phonetics & The Sound Code</span>
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          German is 95% phonetically regular! Once you learn these 12 sound rules, you can read and pronounce almost any German word flawlessly.
+        </p>
+      </div>
+
+      <!-- 12 Golden Phonetic Rules -->
+      <div class="mb-8">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <span>⚡ The 8 Golden Sound Rules</span>
+        </h3>
+        <div id="phonetics-rules-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Alphabet & Special Characters Grid -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+            🔤 German Alphabet, Umlauts (Ä, Ö, Ü) & ß
+          </h3>
+          <span class="text-xs text-slate-400">Click "Pronounce" for native German audio</span>
+        </div>
+        <div id="alphabet-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Minimal Pairs Trainer -->
+      <div class="mb-8">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">
+          🎯 Minimal Pairs Trainer (Sharpen Your German Ear)
+        </h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Distinguish subtle phonetic differences like long vs. short vowels and standard vowels vs. Umlauts:
+        </p>
+        <div id="minimal-pairs-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION 3: PRACTICE ARENA
+         ====================================================================== -->
+    <section id="section-practice" class="tab-section hidden">
+      <div class="mb-6">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <span>⚡ Interactive Practice Arena</span>
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Solidify your German with active recall: Spaced Repetition Flashcards, Word Order Sentence Builder, Der/Die/Das Sprint, and Speech Verification!
+        </p>
+      </div>
+
+      <!-- Sub-tabs within Practice Arena -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Column: Flashcards Engine (7 Cols) -->
+        <div class="lg:col-span-7 space-y-6">
+          <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>🎴 Spaced Repetition Flashcards</span>
+              </h3>
+              <span id="fc-counter" class="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                1 / 70
+              </span>
+            </div>
+
+            <!-- Category Filter Pills -->
+            <div class="flex flex-wrap gap-1.5 mb-6 text-xs">
+              <button onclick="PracticeEngine.filterFlashcards('All')" class="px-3 py-1 rounded-full font-semibold bg-amber-500 text-white">All</button>
+              <button onclick="PracticeEngine.filterFlashcards('Greetings')" class="px-3 py-1 rounded-full font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">Greetings</button>
+              <button onclick="PracticeEngine.filterFlashcards('Food & Drinks')" class="px-3 py-1 rounded-full font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">Food & Drinks</button>
+              <button onclick="PracticeEngine.filterFlashcards('Travel & Transport')" class="px-3 py-1 rounded-full font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">Travel</button>
+              <button onclick="PracticeEngine.filterFlashcards('Verbs')" class="px-3 py-1 rounded-full font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">Verbs</button>
+            </div>
+
+            <!-- Progress line -->
+            <div class="w-full bg-slate-100 dark:bg-slate-700 h-1.5 rounded-full mb-6 overflow-hidden">
+              <div id="fc-progress" class="bg-amber-500 h-1.5 rounded-full transition-all duration-300" style="width: 2%"></div>
+            </div>
+
+            <!-- 3D Flippable Flashcard Card -->
+            <div class="perspective-1000 w-full h-72 cursor-pointer select-none mb-6" onclick="PracticeEngine.flipCard()">
+              <div id="flashcard-inner" class="flashcard-inner">
+                
+                <!-- Front Side -->
+                <div class="flashcard-front bg-gradient-to-br from-slate-50 to-amber-50/40 dark:from-slate-800 dark:to-slate-900 border-2 border-slate-200 dark:border-slate-700 p-8 flex flex-col justify-between shadow-md">
+                  <div class="flex justify-between items-center">
+                    <span id="fc-front-badge" class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800">Category</span>
+                    <button onclick="PracticeEngine.playFlashcardAudio(event)" class="text-2xl p-2 rounded-full hover:bg-amber-100 dark:hover:bg-slate-700 text-amber-500 transition" title="Speak German">
+                      🔊
+                    </button>
+                  </div>
+                  <div>
+                    <h4 id="fc-front-text" class="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                      Hallo
+                    </h4>
+                    <p class="text-xs text-slate-400 dark:text-slate-500 mt-2">Click card or press Space to flip</p>
+                  </div>
+                  <div class="text-xs font-medium text-amber-600 dark:text-amber-400">
+                    💡 Tap to reveal English meaning & sentence
+                  </div>
+                </div>
+
+                <!-- Back Side -->
+                <div class="flashcard-back bg-slate-900 text-white border-2 border-amber-500/60 p-8 flex flex-col justify-between shadow-xl">
+                  <div class="flex justify-between items-center text-xs text-amber-400 font-semibold">
+                    <span>ENGLISH TRANSLATION</span>
+                    <button onclick="PracticeEngine.playFlashcardAudio(event)" class="text-xl p-1 rounded hover:text-white" title="Listen">🔊</button>
+                  </div>
+                  <div>
+                    <h4 id="fc-back-text" class="text-2xl md:text-3xl font-extrabold text-white">
+                      Hello
+                    </h4>
+                    <div class="mt-4 p-3 rounded-xl bg-slate-800/80 border border-slate-700 text-left">
+                      <p id="fc-back-example" class="text-xs text-amber-300 font-mono italic">Hallo, wie geht es dir?</p>
+                      <p id="fc-back-trans" class="text-[11px] text-slate-300 mt-1">Hello, how are you?</p>
+                    </div>
+                  </div>
+                  <div class="text-xs text-slate-400">
+                    Rate how easily you remembered this:
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <!-- Rating / Advance Controls -->
+            <div class="flex items-center justify-between gap-2">
+              <button onclick="PracticeEngine.prevCard()" class="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition text-sm">
+                ◀ Prev
+              </button>
+              <div class="flex gap-2">
+                <button onclick="PracticeEngine.nextCard('again')" class="px-3 sm:px-4 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 dark:bg-rose-950 dark:text-rose-300 text-xs sm:text-sm font-semibold transition">
+                  Hard (Again)
+                </button>
+                <button onclick="PracticeEngine.nextCard('good')" class="px-3 sm:px-4 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs sm:text-sm font-semibold transition">
+                  Good (+2XP)
+                </button>
+                <button onclick="PracticeEngine.nextCard('easy')" class="px-3 sm:px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs sm:text-sm font-semibold shadow-sm transition">
+                  Easy (+5XP)
+                </button>
+              </div>
+              <button onclick="PracticeEngine.nextCard('good')" class="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition text-sm">
+                Next ▶
+              </button>
+            </div>
+          </div>
+
+          <!-- Sentence Builder (Word Order Challenge) -->
+          <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>🧩 Sentence Builder (Word Order V2 Challenge)</span>
+              </h3>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">+15 XP</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-2">Build the correct German sentence by clicking word bubbles in order:</p>
+            <div class="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700 mb-4">
+              <span class="text-xs font-semibold text-slate-400">English:</span>
+              <div id="sb-prompt" class="text-base font-bold text-slate-900 dark:text-white">I drink water today.</div>
+              <div id="sb-rule" class="text-[11px] text-amber-600 dark:text-amber-400 mt-1">Rule: Verb goes in position 2</div>
+            </div>
+
+            <!-- Dropzone: User assembled words -->
+            <div id="sb-dropzone" class="min-h-[52px] p-2.5 rounded-xl border-2 border-dashed border-amber-300 dark:border-amber-700/60 bg-amber-50/30 dark:bg-amber-950/20 flex flex-wrap gap-2 items-center mb-4">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Scrambled word bank -->
+            <div id="sb-wordbank" class="flex flex-wrap gap-2 mb-4">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <div id="sb-result" class="hidden"></div>
+
+            <div class="flex justify-between items-center mt-4">
+              <button onclick="PracticeEngine.renderSentenceChallenge()" class="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                ↺ Reset words
+              </button>
+              <div class="flex gap-2">
+                <button id="sb-check-btn" onclick="PracticeEngine.checkSentence()" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-sm transition">
+                  Check Order
+                </button>
+                <button id="sb-next-btn" onclick="PracticeEngine.nextSentence()" class="hidden px-5 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 text-white font-bold rounded-xl text-sm transition">
+                  Next Challenge ▶
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Der Die Das Sprint & Mic Pronunciation Lab (5 Cols) -->
+        <div class="lg:col-span-5 space-y-6">
+          
+          <!-- Der / Die / Das Rapid Sprint -->
+          <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>🎯 Der / Die / Das Rapid Sprint</span>
+              </h3>
+              <span id="sprint-streak" class="text-xs font-bold text-amber-500">Streak: 0</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              Instinctively pick the correct grammatical gender. Listen and learn the suffix hints!
+            </p>
+
+            <div class="text-center py-6 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700 mb-4">
+              <h4 id="sprint-word" class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Wohnung
+              </h4>
+              <p id="sprint-meaning" class="text-xs text-slate-500 dark:text-slate-400 mt-1">the apartment</p>
+              <div id="sprint-feedback" class="hidden"></div>
+            </div>
+
+            <!-- Gender Buttons -->
+            <div class="grid grid-cols-3 gap-2.5">
+              <button onclick="PracticeEngine.guessGender('der')" class="py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-600/20 transition transform active:scale-95 flex flex-col items-center">
+                <span class="text-base">DER</span>
+                <span class="text-[10px] opacity-80 uppercase tracking-widest font-normal">Masc</span>
+              </button>
+              <button onclick="PracticeEngine.guessGender('die')" class="py-3 rounded-xl font-bold text-white bg-red-600 hover:bg-red-700 shadow-md shadow-red-600/20 transition transform active:scale-95 flex flex-col items-center">
+                <span class="text-base">DIE</span>
+                <span class="text-[10px] opacity-80 uppercase tracking-widest font-normal">Fem</span>
+              </button>
+              <button onclick="PracticeEngine.guessGender('das')" class="py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/20 transition transform active:scale-95 flex flex-col items-center">
+                <span class="text-base">DAS</span>
+                <span class="text-[10px] opacity-80 uppercase tracking-widest font-normal">Neut</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Pronunciation & Mic Audio Lab -->
+          <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span>🎙️ Voice Pronunciation Lab</span>
+              </h3>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Speech AI</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+              Listen to native audio, then click the microphone to speak German and receive real-time accuracy scoring!
+            </p>
+
+            <div class="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700 text-center mb-4">
+              <div id="pron-word" class="text-2xl font-black text-slate-900 dark:text-white">Guten Morgen</div>
+              <div id="pron-ipa" class="text-xs font-mono text-amber-600 dark:text-amber-400 mt-0.5">/ˌɡuːtn̩ ˈmɔʁɡn̩/</div>
+              <p id="pron-tip" class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 italic">
+                Tip: Vocalized end -er sounds like soft "ah"
+              </p>
+            </div>
+
+            <div class="flex items-center justify-center gap-3">
+              <button onclick="PracticeEngine.playPronounceSample(0.9)" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-amber-500 hover:text-white text-slate-800 dark:text-slate-200 text-xs font-bold transition flex items-center gap-1.5">
+                <span>🔊 Listen</span>
+              </button>
+              <button onclick="PracticeEngine.playPronounceSample(0.7)" class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-amber-500 hover:text-white text-slate-800 dark:text-slate-200 text-xs font-bold transition flex items-center gap-1.5">
+                <span>🐢 Slow</span>
+              </button>
+              <button id="pron-mic-btn" onclick="PracticeEngine.recordAndVerify()" class="px-5 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-md shadow-rose-500/20 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"></path></svg>
+                <span id="pron-mic-status">Speak into Mic</span>
+              </button>
+            </div>
+
+            <div id="pron-result" class="hidden"></div>
+
+            <div class="text-right mt-4">
+              <button onclick="PracticeEngine.nextPronounceWord()" class="text-xs font-semibold text-slate-500 hover:text-amber-500">
+                Next Word ▶
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gamified Comprehensive Quiz Arena -->
+      <div class="mt-8">
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <span>🧠 Rapid Comprehension Quiz Arena</span>
+        </h3>
+        <div id="quiz-container">
+          <!-- Rendered dynamically by PracticeEngine.renderQuizQuestion() -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION 4: HIGH-FREQUENCY VOCABULARY (PARETO 80/20)
+         ====================================================================== -->
+    <section id="section-vocab" class="tab-section hidden">
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>📖 500 High-Frequency German Vocabulary</span>
+          </h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Searchable, categorized list with color-coded grammatical genders and one-click native audio speech playback.
+          </p>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="w-full sm:w-72 relative">
+          <input type="text" id="vocab-search-input" oninput="App.renderVocabulary(this.value)" placeholder="Search German or English..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 transition">
+          <span class="absolute left-3 top-2.5 text-slate-400 text-sm">🔍</span>
+        </div>
+      </div>
+
+      <!-- Category Filter Buttons -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button onclick="App.filterVocab('All')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-white">All Categories</button>
+        <button onclick="App.filterVocab('Essentials')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300">Essentials</button>
+        <button onclick="App.filterVocab('Greetings')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300">Greetings</button>
+        <button onclick="App.filterVocab('Food & Drinks')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300">Food & Drinks</button>
+        <button onclick="App.filterVocab('Travel & Transport')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300">Travel & Transport</button>
+        <button onclick="App.filterVocab('Time')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300">Time & Dates</button>
+        <button onclick="App.filterVocab('People & Family')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300">People & Family</button>
+        <button onclick="App.filterVocab('Work & Daily Life')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300">Work & Daily Life</button>
+      </div>
+
+      <!-- Table Container -->
+      <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3.5 px-4">German Word & Audio</th>
+                <th class="py-3.5 px-4">English Meaning</th>
+                <th class="py-3.5 px-4">Gender</th>
+                <th class="py-3.5 px-4">Example Sentence</th>
+                <th class="py-3.5 px-4">Category</th>
+              </tr>
+            </thead>
+            <tbody id="vocabulary-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION 5: CORE VERBS & CONJUGATIONS
+         ====================================================================== -->
+    <section id="section-verbs" class="tab-section hidden">
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <span>🏃 The 50 Power Verbs (Conjugated & Audio)</span>
+          </h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+            German verbs drive every sentence. Master their Present tense stem changes, Perfekt auxiliary (haben/sein), and Partizip II forms.
+          </p>
+        </div>
+
+        <div class="w-full sm:w-64 relative">
+          <input type="text" oninput="App.renderVerbs(this.value)" placeholder="Search verb..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          <span class="absolute left-3 top-2.5 text-slate-400 text-sm">🔍</span>
+        </div>
+      </div>
+
+      <div id="verbs-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION 6: SURVIVAL PHRASES & FALSE FRIENDS
+         ====================================================================== -->
+    <section id="section-phrases" class="tab-section hidden">
+      <div class="mb-8">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          💬 Everyday Conversational Chunks & Idioms
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">
+          Native German speakers rely heavily on natural conversational routines and colourful idioms. Learn them in context!
+        </p>
+        <div id="phrases-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <div class="mt-12">
+        <div class="flex items-center gap-3 mb-4">
+          <span class="text-2xl">⚠️</span>
+          <div>
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              False Friends ("Falsche Freunde") Trap Guide
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Words that look just like English words, but have completely different (sometimes embarrassing!) meanings.</p>
+          </div>
+        </div>
+        <div id="false-friends-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION 7: GRAMMAR BLUEPRINT & SUFFIX HACKS
+         ====================================================================== -->
+    <section id="section-grammar" class="tab-section hidden">
+      <div class="mb-8">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          📐 German Grammar Blueprint & Gender Hacks
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          Never memorize genders at random. Master the 80% predictable noun suffix rules and the 4 German cases made simple!
+        </p>
+      </div>
+
+      <!-- Suffix Rules: 3 Columns (Der, Die, Das) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        
+        <!-- Der (Masculine) -->
+        <div class="p-6 rounded-3xl bg-blue-50/70 dark:bg-blue-950/30 border-2 border-blue-200 dark:border-blue-900">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-bold text-blue-900 dark:text-blue-300">🟦 DER (Masculine)</h3>
+            <span class="text-xs font-mono font-bold bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200 px-2.5 py-0.5 rounded-full">der / ein</span>
+          </div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-400 mb-2">Predictable Endings:</h4>
+          <ul class="text-xs text-blue-950 dark:text-blue-200 space-y-1.5 mb-4">
+            <li>• <strong>-or:</strong> der Motor, der Professor</li>
+            <li>• <strong>-ling:</strong> der Schmetterling, der Lehrling</li>
+            <li>• <strong>-ismus:</strong> der Optimismus, der Tourismus</li>
+            <li>• <strong>-ist / -ant:</strong> der Journalist, der Praktikant</li>
+            <li>• <strong>-er (agent nouns):</strong> der Fahrer, der Lehrer</li>
+          </ul>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-blue-800 dark:text-blue-400 mb-2">Natural Categories:</h4>
+          <p class="text-xs text-blue-900 dark:text-blue-300">Days, months, seasons (der Montag, der Januar, der Sommer), compass points (der Norden).</p>
+        </div>
+
+        <!-- Die (Feminine) -->
+        <div class="p-6 rounded-3xl bg-red-50/70 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-900">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-bold text-red-900 dark:text-red-300">🟥 DIE (Feminine)</h3>
+            <span class="text-xs font-mono font-bold bg-red-200 dark:bg-red-900 text-red-900 dark:text-red-200 px-2.5 py-0.5 rounded-full">die / eine</span>
+          </div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-red-800 dark:text-red-400 mb-2">100% Guaranteed Endings:</h4>
+          <ul class="text-xs text-red-950 dark:text-red-200 space-y-1.5 mb-4">
+            <li>• <strong>-ung:</strong> die Wohnung, die Zeitung</li>
+            <li>• <strong>-heit / -keit:</strong> die Freiheit, die Möglichkeit</li>
+            <li>• <strong>-schaft:</strong> die Freundschaft, die Mannschaft</li>
+            <li>• <strong>-tät / -ion:</strong> die Universität, die Station</li>
+            <li>• <strong>-ik / -ei:</strong> die Musik, die Bäckerei, die Datei</li>
+            <li>• <strong>-in (female):</strong> die Lehrerin, die Ärztin</li>
+          </ul>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-red-800 dark:text-red-400 mb-2">Rule of Thumb:</h4>
+          <p class="text-xs text-red-900 dark:text-red-300">Over 90% of two-syllable nouns ending in <strong>-e</strong> are feminine (die Katze, die Lampe, die Sonne).</p>
+        </div>
+
+        <!-- Das (Neuter) -->
+        <div class="p-6 rounded-3xl bg-emerald-50/70 dark:bg-emerald-950/30 border-2 border-emerald-200 dark:border-emerald-900">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-bold text-emerald-900 dark:text-emerald-300">🟩 DAS (Neuter)</h3>
+            <span class="text-xs font-mono font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 px-2.5 py-0.5 rounded-full">das / ein</span>
+          </div>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-2">Predictable Endings:</h4>
+          <ul class="text-xs text-emerald-950 dark:text-emerald-200 space-y-1.5 mb-4">
+            <li>• <strong>-chen / -lein:</strong> das Mädchen, das Brötchen</li>
+            <li>• <strong>-ment:</strong> das Dokument, das Experiment</li>
+            <li>• <strong>-um:</strong> das Zentrum, das Museum</li>
+            <li>• <strong>-ma:</strong> das Thema, das Klima</li>
+            <li>• <strong>-tum:</strong> das Eigentum</li>
+          </ul>
+          <h4 class="text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-2">Verbs into Nouns:</h4>
+          <p class="text-xs text-emerald-900 dark:text-emerald-300">Any German verb used as a noun is neuter: das Essen (food), das Leben (life), das Lernen (learning).</p>
+        </div>
+      </div>
+
+      <!-- The 4 Cases Master Table -->
+      <div class="mb-8">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">
+          📊 The 4 German Cases Master Table
+        </h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          Notice the shortcut: In <strong>Akkusativ</strong>, ONLY masculine changes (der -> den). In <strong>Dativ</strong>, everything takes an "m" or "r" (dem, der, dem, den+n).
+        </p>
+        <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <th class="py-3 px-4">Case & Role</th>
+                  <th class="py-3 px-4 text-blue-600">Masculine (der/ein)</th>
+                  <th class="py-3 px-4 text-red-600">Feminine (die/eine)</th>
+                  <th class="py-3 px-4 text-emerald-600">Neuter (das/ein)</th>
+                  <th class="py-3 px-4 text-amber-600">Plural (die/keine)</th>
+                </tr>
+              </thead>
+              <tbody id="cases-table-body" class="divide-y divide-slate-100 dark:divide-slate-800">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prepositions Mnemonics -->
+      <div class="mb-8">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-4">
+          🧲 Prepositions That Trigger Cases (Mnemonics)
+        </h3>
+        <div id="prepositions-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION 8: FAST-LEARNING METHODOLOGY
+         ====================================================================== -->
+    <section id="section-methodology" class="tab-section hidden">
+      <div class="mb-8">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+          🚀 The BlitzDeutsch Accelerated Methodology
+        </h2>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          How to learn German 3x faster by combining the Pareto 80/20 Rule, Phonetic Decoding, and Spaced Active Recall.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        
+        <!-- Pillar 1 -->
+        <div class="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-950/70 text-amber-500 flex items-center justify-center text-2xl mb-4 font-bold">
+            80/20
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">1. The Pareto Principle (80/20 Rule)</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            The German language has over 300,000 words, but just <strong>500 core words account for over 70%</strong> of daily conversational German! Instead of memorizing obscure dictionary lists, BlitzDeutsch focuses exclusively on the highest-yield verbs, survival phrases, and functional connectors.
+          </p>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div class="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950/70 text-rose-500 flex items-center justify-center text-2xl mb-4 font-bold">
+            🔊
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">2. Phonetic Decoding (Sound-First Learning)</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            English spelling is chaotic, but <strong>German is 95% phonetically consistent</strong>. If you master the 12 Golden Rules (like <em>ei</em> vs <em>ie</em>, soft <em>ch</em> vs hard <em>ch</em>, <em>sp/st</em> -> "shp/sht", and final consonant hardening), you unlock the superpower to read and pronounce any written word accurately on day one.
+          </p>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-950/70 text-emerald-500 flex items-center justify-center text-2xl mb-4 font-bold">
+            🧠
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">3. Spaced Active Recall & Chunking</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            Passive reading leads to rapid forgetting (Ebbinghaus curve). BlitzDeutsch uses <strong>active flashcard testing</strong>, audio speech recognition, and instant word order games. We learn phrases in natural chunks ("Ich hätte gern...", "Es tut mir leid...") rather than isolated grammar rules.
+          </p>
+        </div>
+
+        <!-- Pillar 4 -->
+        <div class="p-6 rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div class="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-950/70 text-purple-500 flex items-center justify-center text-2xl mb-4 font-bold">
+            ⚙️
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-2">4. The V2 Pattern Engine (Sentence Architecture)</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+            German word order seems intimidating until you grasp the two core anchors:
+            <strong>1) In main statements, the conjugated verb is ALWAYS in position 2.</strong>
+            <strong>2) In "weil/dass/wenn" subordinate clauses, the verb kicks to the very end!</strong> Once this click happens, sentence building becomes effortless Lego blocks.
+          </p>
+        </div>
+      </div>
+
+      <!-- Recommended 30-Day Daily Study Routine -->
+      <div class="p-6 md:p-8 rounded-3xl bg-slate-900 text-white border border-slate-800">
+        <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-amber-400">
+          <span>📅 The Recommended 25-Minute Daily Blitz Routine</span>
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+          <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700">
+            <span class="block text-amber-400 font-bold mb-1">0–5 Mins</span>
+            <strong class="text-sm block text-white mb-1">Sound Warmup</strong>
+            <p class="text-slate-400">Drill 5 minimal pairs and listen to German alphabet pronunciation in the Phonetics tab.</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700">
+            <span class="block text-amber-400 font-bold mb-1">5–15 Mins</span>
+            <strong class="text-sm block text-white mb-1">Active Flashcards</strong>
+            <p class="text-slate-400">Review 15-20 flashcards in the Practice Arena, flipping and saying the German aloud.</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700">
+            <span class="block text-amber-400 font-bold mb-1">15–20 Mins</span>
+            <strong class="text-sm block text-white mb-1">Word Order Drills</strong>
+            <p class="text-slate-400">Assemble 3 sentences in the Sentence Builder to lock in the V2 and verb-kicker rules.</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-800/80 border border-slate-700">
+            <span class="block text-amber-400 font-bold mb-1">20–25 Mins</span>
+            <strong class="text-sm block text-white mb-1">Roadmap Check-in</strong>
+            <p class="text-slate-400">Complete one milestone in the Roadmap tab, check it off, and collect your XP points!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================
+       FOOTER
+       ======================================================================== -->
+  <footer class="mt-16 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-8 transition">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🇩🇪</span>
+        <div>
+          <p class="text-sm font-bold text-slate-900 dark:text-white">BlitzDeutsch Accelerated Learning Engine</p>
+          <p class="text-xs text-slate-500">Built for fast, structured, audio-enabled German mastery.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4 text-xs font-semibold text-slate-600 dark:text-slate-400">
+        <a href="#roadmap" onclick="App.switchTab('roadmap')" class="hover:text-amber-500 transition">Roadmap</a>
+        <a href="#phonetics" onclick="App.switchTab('phonetics')" class="hover:text-amber-500 transition">Phonetics</a>
+        <a href="#practice" onclick="App.switchTab('practice')" class="hover:text-amber-500 transition">Practice Arena</a>
+        <a href="#vocab" onclick="App.switchTab('vocab')" class="hover:text-amber-500 transition">Vocabulary</a>
+        <a href="#methodology" onclick="App.switchTab('methodology')" class="hover:text-amber-500 transition">Methodology</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/practice.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
